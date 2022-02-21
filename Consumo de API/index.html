@@ -70,8 +70,9 @@ function createGame(){
         var price = listItem.getAttribute("data-price");
         document.getElementById("idEdit").value = id;
         document.getElementById("titleEdit").value = title;
-        document.getElementById("yearEdit").value = year;
         document.getElementById("priceEdit").value = price;
+        document.getElementById("yearEdit").value = year;
+       
     }
 
     function updateGame(){
@@ -110,8 +111,9 @@ function createGame(){
 
             item.setAttribute("data-id", game.id);
             item.setAttribute("data-title", game.title);
-            item.setAttribute("data-year", game.year);
             item.setAttribute("data-price", game.price);
+            item.setAttribute("data-year", game.year);
+            
             
             
             item.innerHTML = game.id + " - " + game.title + " - $" + game.price;
@@ -119,8 +121,8 @@ function createGame(){
             var deleteBtn = document.createElement("button");
             deleteBtn.innerHTML = "Deletar";
             deleteBtn.addEventListener("click", function(){
-                deleteGame(item)
-            })
+                deleteGame(item);
+            });
 
             var editBtn = document.createElement("button");
             editBtn.innerHTML = "Editar";
