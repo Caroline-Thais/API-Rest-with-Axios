@@ -2,6 +2,9 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+
+const JWTSecret = "abcdefgh";
 
 app.use(cors());
 
@@ -47,13 +50,35 @@ var DB = {
     ]
 }
 
+//Middleware
+function auth (req, res, next){
+    const authToken = req.headers['authorization'];
+    if(authToken != undefined){
+        const bearer = authToken.split(' ');
+        var token = bearer[1];
+        jwt.verify(token, JWTSecret, (err, data) => {
+            if(err){
+                res.status(401);
+                res.json({err: "Token inválido!"});
+            }else{
+                req.token = token;
+                req.loggedUser = { id: data.id, email: data.email };
+                next();
+            }
+        });
+    }else{
+        res.status(401);
+        res.json({err: "Token inválido!"});
+    }
+}
+
 //Endpoints
-app.get("/games", (req, res) => {
+app.get("/games", auth, (req, res) => {
     res.statusCode = 200;
     res.json(DB.games);
 });
 
-app.get("/game/:id", (req, res) => {
+app.get("/game/:id", auth, (req, res) => {
 
     if(isNaN(req.params.id)){
         res.sendStatus(400);
@@ -71,7 +96,7 @@ app.get("/game/:id", (req, res) => {
     }
 });
 
-app.post("/game", (req, res) => {
+app.post("/game", auth, (req, res) => {
     
     var { title, price, year } = req.body;
 
@@ -85,7 +110,7 @@ app.post("/game", (req, res) => {
     res.sendStatus(200);
 });
 
-app.delete("/game/:id", (req, res) => {
+app.delete("/game/:id", auth, (req, res) => {
 
     if(isNaN(req.params.id)){
         res.sendStatus(400);
@@ -103,7 +128,7 @@ app.delete("/game/:id", (req, res) => {
     }
 });
 
-app.put("/game/:id", (req, res) => {
+app.put("/game/:id", auth, (req, res) => {
 
     if(isNaN(req.params.id)){
         res.sendStatus(400);
@@ -142,8 +167,16 @@ app.post("/auth", (req, res) => {
         if (user != undefined){
 
             if(user.password == password){
-                res.status(200);
-                res.json({token: "Token falso!"})
+
+                jwt.sign({id: user.id, email:user.email}, JWTSecret, {expiresIn: '1h'}),(err, token) => {
+                    if(err){
+                        res.status(400);
+                        res.json({err:"Falha interna."});
+                    }else{
+                        res.status(200);
+                        res.json({token: token});
+                    }
+                }
             }else{
                 res.status(401);
                 res.json({err: "Credenciais inválidas"});
@@ -157,6 +190,8 @@ app.post("/auth", (req, res) => {
         res.json({err: "O email enviado é inválido"})
     }
 });
+
+
 
 //Porta
 app.listen(8085, () => {
